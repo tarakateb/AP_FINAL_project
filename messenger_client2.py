@@ -621,16 +621,16 @@ class MessageHandler:
                 self.app.user_list.setItemWidget(item, widget)
 
     def _handle_contact_added(self, message):
-            _, username = message.split("|", 1)
+            str , username = message.split("|", 1) # first phrase is ADDCONTACT  
             self.app.user_list.addItem(username)
             self.app.client_socket.sendall("GETCONTACTS".encode('utf-8'))
 
     def _handle_contact_failed(self, message):
-            _, error = message.split("|")
+            str , error = message.split("|")
             QtWidgets.QMessageBox.warning(self.app, "Add Contact Failed", error)
 
     def _handle_username_change(self, message):
-            _, old_username, new_username = message.split("|")
+            str , old_username, new_username = message.split("|")
             self.update_username_in_list(old_username, new_username)
 
     def _handle_chat_message(self, message):
