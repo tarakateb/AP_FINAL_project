@@ -678,7 +678,7 @@ class MessageHandler:
                                 widget.text_label.setText(widget.text_label.text() + " (New)")
                             break
 
-def update_username_in_list(self, old_username, new_username):
+    def update_username_in_list(self, old_username, new_username):
         for i in range(self.app.user_list.count()):
             item = self.app.user_list.item(i)
             widget = self.app.user_list.itemWidget(item)
