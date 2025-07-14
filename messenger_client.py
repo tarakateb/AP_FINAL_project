@@ -73,7 +73,7 @@ class MessengerApp(QtWidgets.QWidget):
         # Settings button at top-left
         self.settings_button = QtWidgets.QPushButton()
         self.settings_button.setIcon(QtGui.QIcon("setting.png"))
-        self.settings_button.setIconSize(QtCore.QSize(48, 48))
+        self.settings_button.setIconSize(QtCore.QSize(70, 70))
         self.settings_button.setToolTip("Settings")
         self.settings_button.clicked.connect(lambda: self.settings_manager.open_settings())
         self.settings_button.setFlat(True)
@@ -81,7 +81,7 @@ class MessengerApp(QtWidgets.QWidget):
 
         # Profile Picture
         self.profile_pic_label = QtWidgets.QLabel()
-        self.profile_pic_label.setFixedSize(50, 50)
+        self.profile_pic_label.setFixedSize(70, 70)
         self.profile_pic_label.setToolTip("Profile Picture")
         self.profile_pic_label.setStyleSheet("""
             QLabel {
@@ -92,17 +92,15 @@ class MessengerApp(QtWidgets.QWidget):
             }
         """)
 
-        # Add horizontal layout for top bar (settings + profile)
+        # Adding horizontal layout for top bar (settings + profile + add contact):
         top_bar_layout = QtWidgets.QHBoxLayout()
         top_bar_layout.addWidget(self.settings_button)
         top_bar_layout.addWidget(self.profile_pic_label)
-        top_bar_layout.addStretch()
-        user_list_layout.addLayout(top_bar_layout)
 
         # Add contact button
         self.add_contact_button = QtWidgets.QPushButton()
         self.add_contact_button.setIcon(QtGui.QIcon("Contact.png"))
-        self.add_contact_button.setIconSize(QtCore.QSize(50, 50))
+        self.add_contact_button.setIconSize(QtCore.QSize(70, 70))
         self.add_contact_button.setToolTip("Add Contact")
         self.add_contact_button.clicked.connect(self.add_contact_page)
         self.add_contact_button.setFlat(True)
@@ -111,22 +109,26 @@ class MessengerApp(QtWidgets.QWidget):
         #Create group button
         self.create_group_button= QtWidgets.QPushButton()
         self.create_group_button.setIcon(QtGui.QIcon("create_group.png"))
-        self.create_group_button.setIconSize(QtCore.QSize(50, 50))
+        self.create_group_button.setIconSize(QtCore.QSize(70, 70))
         self.create_group_button.setToolTip("Create Group")
         self.create_group_button.clicked.connect(lambda: self.group_handler.create_group())
         self.create_group_button.setFlat(True)
 
-        #top_bar2_layout = QtWidgets.QHBoxLayout()
+        top_bar_layout.addWidget(self.add_contact_button)
+        user_list_layout.addLayout(top_bar_layout)
+
+
         top_bar2_layout = QtWidgets.QHBoxLayout()
         top_bar2_layout.addStretch()
         top_bar2_layout.addWidget(self.create_group_button)
-        top_bar2_layout.addWidget(self.add_contact_button)
+        top_bar2_layout.addStretch()
+        #top_bar2_layout.addWidget(self.add_contact_button)
         user_list_layout.addLayout(top_bar2_layout)
 
         user_list_layout.addWidget(QtWidgets.QLabel("Chats"))
 
         self.user_list = QtWidgets.QListWidget()
-        self.user_list.setIconSize(QtCore.QSize(48, 48))
+        self.user_list.setIconSize(QtCore.QSize(50, 50))
 
         self.user_list.setStyleSheet("""
             QListWidget {
@@ -172,7 +174,8 @@ class MessengerApp(QtWidgets.QWidget):
 
         # Assembling main layout(with stretch factors)
         self.main_layout.addWidget(self.user_list_frame, 1)
-        self.main_layout.addWidget(self.chat_frame, 2)
+        self.main_layout.addWidget(self.chat_frame, 3)
+
 
         self.main_stack.addWidget(self.main_widget)
         # Register page
@@ -244,7 +247,7 @@ class MessengerApp(QtWidgets.QWidget):
 
         self.add_contact_frame.setStyleSheet("background-image: url(back5.jpg);")
         self.main_stack.addWidget(self.add_contact_frame)
-        self.main_widget.setFixedSize(800, 600)
+        self.main_widget.setFixedSize(1000, 600)
 
         # Start with login frame visible
         self.main_stack.setCurrentWidget(self.login_frame)
@@ -843,7 +846,7 @@ class SettingsManager:
             pic_dialog.exec()
 
     def _select_profile_picture(self, button):
-        file_name, _ = QtWidgets.QFileDialog.getOpenFileName(self.app, "Select Profile Picture", "", "Images (*.png *.jpg)")
+        file_name, string = QtWidgets.QFileDialog.getOpenFileName(self.app, "Select Profile Picture", "", "Images (*.png *.jpg)")
         if file_name:
             target_dir = "profile_pics"
             os.makedirs(target_dir, exist_ok=True)
@@ -862,13 +865,25 @@ class SettingsManager:
         if user:
             old_username = self.app.username
             if new_username and new_username != old_username:
+                existing_user = session.query(User).filter_by(username=new_username).first()
+                if existing_user:
+                    QtWidgets.QMessageBox.warning(
+                        dialog,
+                        "Username Taken",
+                        f"The username '{new_username}' is already in use. Please choose a different one."
+                    )
+                    session.close()
+                    return
+
                 user.username = new_username
                 session.commit()
+
                 session.query(Message).filter_by(sender_username=old_username).update(
                     {Message.sender_username: new_username}, synchronize_session=False)
                 session.query(Message).filter_by(receiver_username=old_username).update(
                     {Message.receiver_username: new_username}, synchronize_session=False)
                 session.commit()
+
                 self.app.username = new_username
                 self.app.client_socket.sendall(f"USERNAMECHANGE|{old_username}|{new_username}".encode('utf-8'))
 
